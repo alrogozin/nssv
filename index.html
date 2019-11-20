@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>NSSV application</title>
+    <!-- <script src="https://unpkg.com/vue"></script> -->
+    <script src="assets/js/vue.js"></script>
+    <!-- axios -->
+    <!-- <script src="https://unpkg.com/axios/dist/axios.min.js"></script> -->
+    <script src="assets/js/axios.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" type="text/css" href="assets/css/app.css">
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div id="app" class="container">
+        <div class="row">
+            <div class="col-sm-7 col-sm-offset-1">
+                <fieldset class="form-inline">
+                    <label for="ost_select">Очистные сооружения</label>
+                    <select class="form-control" id="ost_select" v-model="curOSTValue">
+                        <option value="-888" selected>Выберите значение</option>
+                        <option v-for="ost in os_types" :value="ost.id">{{ost.name}}</option>
+                    </select>
+                </fieldset>
+            </div>
+            <div class="col-sm-3 col-sm-offset-1">
+                <a href="#" class="btn btn-primary" @click="curOSTValue = -888;">Очистить</a>
+                <a v-if="isCanSaveData" href="#" class="btn btn-primary"
+                    @click="saveData('main-table', 'W3C')">Сохранить</a>
+                <a v-else href="#" class="btn btn-primary" disabled>Сохранить</a>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-sm-11 col-sm-offset-1 table-responsive">
+                <table class="table table-hover" id="main-table">
+                    <thead>
+                        <th class="success" scope="col"></th>
+                        <th class="success" scope="col">Загрязняющее вещество</th>
+                        <th class="success" scope="col">Единицы измерения</th>
+                        <th class="success" scope="col">Норматив НССВ</th>
+                        <th class="success" scope="col">Декларация</th>
+                        <th class="success" scope="col">Проба</th>
+                        <th class="success" scope="col">Конц.в&nbsp;расчет</th>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(arr, idx) in dataArray">
+                            <td>
+                                <p class="form-control-static">{{ arr.tce_abbr }}</p>
+                            </td>
+                            <td>
+                                <p class="form-control-static">{{ arr.tce_name }}</p>
+                            </td>
+                            <td>
+                                <p class="form-control-static">{{ arr.tce_dimension }}</p>
+                            </td>
+                            <td>
+                                <p class="form-control-static">{{ arr.norm_value }}</p>
+                            </td>
+                            <td>
+                                <div class="form-group">
+                                    <input type="number" class="form-control" placeholder="значение в декларации"
+                                        v-model.number.lazy="arr.decl_value" @change="get_koeff_itogo()">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-group">
+                                    <input type="number" class="form-control" placeholder="значение в пробе"
+                                        v-model.number.lazy="arr.proba_value" @change="get_koeff_itogo()">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-group">
+                                    <p class="form-control-static" style="text-align: end;" v-show="arr.conc>0">
+                                        {{ arr.conc }}</p>
+                                    <!-- <input type="text" disabled class="form-control" placeholder="" v-model="arr.conc"> -->
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="7">
+                                <div class="itogo-div" v-show="koeff_itogo>0">
+                                    <p class="form-control-static">Коэфф.: {{ koeff_itogo }}</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!--  -->
+    <script type="text/javascript">
+        // $(function () {
+        //     $('button').click(function () {
+        //         var url = 'data:application/vnd.ms-excel,' + encodeURIComponent($('#main-table').html())
+        //         location.href = url
+        //         return false
+        //     })
+        // })
+        var nssv = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    os_types: [],
+                    zv_dict: [],
+                    koeff_12: null,
+                    koeff_4: null,
+                    curOSTValue: -888,
+                    dataArray: [],
+                    koeff_itogo: null,
+                    dataRec: {
+                        tce_id: null,
+                        tce_abbr: '',
+                        tce_name: '',
+                        tce_dimension: '',
+                        h_koeff: null,
+                        zv_id: null,
+                        k2_koeff: null,
+                        num_order: null,
+                        norm_value: null,
+                        decl_value: null,
+                        proba_value: null,
+                        conc: null
+                    }
+                }
+            },
+            // Computed
+            computed: {
+                isCanSaveData() {
+                    if (this.curOSTValue == -888) return false;
+                    else return true;
+                }
+            },
+            // Methods
+            methods: {
+                get_koeff_itogo() {
+                    this.koeff_itogo = 0;
+                    for (i = 0; i < this.dataArray.length; i++) {
+                        this.dataArray[i].conc = 0;
+                        // Если нет пробы
+                        if (this.dataArray[i].proba_value === '') {
+                            if (this.dataArray[i].decl_value !== '') {
+                                if (this.dataArray[i].decl_value > this.dataArray[i].norm_value) {
+                                    this.dataArray[i].conc = this.dataArray[i].decl_value;
+                                }
+                            }
+                        } else { // проба есть
+                            if (this.dataArray[i].proba_value !== '') {
+                                if (this.dataArray[i].proba_value > this.dataArray[i].norm_value) {
+                                    this.dataArray[i].conc = this.dataArray[i].proba_value;
+                                }
+                            }
+                        }
+                        // (mBuff - v_rec.norm_value) * v_rec.k2_koeff * v_rec.h_koeff * mNsfRec.k3_koeff * mNsfRec.k4_koeff * power(10, -6),
+                        if (this.dataArray[i].conc > this.dataArray[i].norm_value) {
+                            this.koeff_itogo += (this.dataArray[i].conc - this.dataArray[i].norm_value) * this.dataArray[i].k2_koeff * this.dataArray[i].h_koeff * this.koeff_12 * this.koeff_4 * Math.pow(10, -6);
+                        }
+
+                    }
+                    this.koeff_itogo = this.koeff_itogo.toFixed(4);
+                    return this.koeff_itogo;
+                },
+                saveData() {
+
+                    let tmpArr = [this.dataArray, { "koeff_itogo": this.koeff_itogo }];
+                    let jsn = JSON.stringify(tmpArr, null, 4);
+                    var blob = new Blob([jsn], { type: 'application/json' });
+
+                    var url = window.URL.createObjectURL(blob);
+                    var link = document.createElement("a");
+                    link.download = "data.json";
+                    link.href = url;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    delete link;
+                }
+            },
+            watch: {
+                curOSTValue: function (newVal, oldVal) {
+                    // Очистка массива
+                    this.dataArray.splice(0, this.dataArray.length);
+                    this.koeff_itogo = 0;
+
+                    // Если выбрано реальное значение ОС, заполняем массив:
+                    if (newVal == -888) {
+                        ;
+                    } else {
+                        let tmpArray2 = [];
+                        this.zv_dict.filter(function (item) { return item.os_id === parseInt(newVal, 10) })
+                            .forEach(function (item, i, arr) {
+                                this.recData = {};
+                                this.recData.tce_id = item.tce_id;
+                                this.recData.tce_abbr = item.tce_abbr;
+                                this.recData.tce_name = item.tce_name;
+                                this.recData.tce_dimension = item.tce_dimension;
+                                this.recData.h_koeff = item.h_koeff;
+                                this.recData.zv_id = item.id;
+                                this.recData.k2_koeff = item.k2_koeff;
+                                this.recData.norm_value = item.norm_value;
+                                this.recData.num_order = item.tce_num_order;
+                                this.recData.decl_value = item.norm_value;
+                                this.recData.proba_value = '';
+                                this.recData.conc = 0;
+                                tmpArray2.push(this.recData);
+                            });
+                        this.dataArray = tmpArray2;
+                    }
+                }
+            },
+            // Filters:
+            filters: {
+            },
+            // ---- Life Cycle Events Hooks
+            created: function () {
+                console.log("created");
+                axios.get('./assets/data/os_types.json')
+                    .then((response) => {
+                        this.os_types = response.data.items;
+                    });
+                axios.get('./assets/data/zv.json')
+                    .then((response) => {
+                        this.zv_dict = response.data.items;
+                    });
+                /*
+                    Select * from rds_vtype_cmn_eco_koeff;
+                    50 	- k3 		- Коэфф.. 	К1-2
+                    1,1 	- k3.1 	- Коэфф. 	К4
+                */
+                axios.get('./assets/data/koeff.json')
+                    .then((response) => {
+                        for (itm in response.data.items) {
+                            if (response.data.items[itm].abbr == 'K3') {
+                                this.koeff_12 = response.data.items[itm].value;
+                            } else if (response.data.items[itm].abbr == 'K3.1') {
+                                this.koeff_4 = response.data.items[itm].value;
+                            }
+                        }
+                    });
+            }
+        });
+    </script>
+</body>
+
+</html>
+<!-- 
+    алгоритм расчета:
+        1. итоговая концентрация
+        If cc_rec.conc_nsr is null Then -- если нет пробы
+            If cc_rec.conc_decls > cc_rec.norm_value Then -- если декларация выше нормы
+                mConcItogo := cc_rec.conc_decls;
+            End If;
+        Else -- если есть проба
+            If cc_rec.conc_nsr > cc_rec.norm_value Then -- проба выше нормы
+                mConcItogo := cc_rec.conc_nsr;
+            End If;
+        End If;
+
+ -->

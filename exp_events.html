@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>NSSV application</title>
+    <!-- <script src="https://unpkg.com/vue"></script> -->
+    <script src="assets/js/vue.js"></script>
+    <!-- axios -->
+    <!-- <script src="https://unpkg.com/axios/dist/axios.min.js"></script> -->
+    <script src="assets/js/axios.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" type="text/css" href="assets/css/app.css">
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div id="exp_app" class="container">
+        <div class="row">
+            {{ counter }}<br>
+            <button v-on:click="incrementCounter">Increment counter</button>
+            <my-component v-on:increment-me="incrementCounter">Increment from child</my-component>
+        </div>
+    </div>
+    <!--  -->
+    <script type="text/javascript">
+        const MyComponent = {
+            template: `<div><button v-on:click="childIncrementalCounter">Increment From child</button></div>`,
+            methods: {
+                childIncrementalCounter() {
+                    this.$emit('increment-me');
+                }
+            }
+        };
+
+        var exp = new Vue({
+            el: '#exp_app',
+            components: { 'my-component': MyComponent },
+            data() {
+                return {
+                    counter: 0
+                }
+            },
+            // // Computed
+            computed: {
+            },
+            // Methods
+            methods: {
+                incrementCounter() {
+                    this.counter++;
+                }
+            },
+            watch: {
+                // curOSTValue: function (newVal, oldVal) {
+                // }
+            },
+            // Filters:
+            filters: {
+            },
+
+            // ---- Life Cycle Events Hooks
+            created: function () {
+                console.log("created");
+                // axios.get('./assets/data/os_types.json')
+                //     .then((response) => {
+                //         this.os_types = response.data.items;
+                //     });
+                // axios.get('./assets/data/zv.json')
+                //     .then((response) => {
+                //         this.zv_dict = response.data.items;
+                //     });
+                // axios.get('./assets/data/koeff.json')
+                //     .then((response) => {
+                //         for (itm in response.data.items) {
+                //             if (response.data.items[itm].abbr == 'K3') {
+                //                 this.koeff_12 = response.data.items[itm].value;
+                //             } else if (response.data.items[itm].abbr == 'K3.1') {
+                //                 this.koeff_4 = response.data.items[itm].value;
+                //             }
+                //         }
+                //     });
+            }
+        });
+    </script>
+</body>
+
+</html>

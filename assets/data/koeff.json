@@ -1,0 +1,1 @@
+{"items":[{"abbr":"K3","name":"K1-2","value":50},{"abbr":"K3.1","name":"K4","value":1.1}],"hasMore":false,"limit":25,"offset":0,"count":2,"links":[{"rel":"self","href":"http://10.1.1.40:8080/ords/mvk/nssv/koeff"},{"rel":"describedby","href":"http://10.1.1.40:8080/ords/mvk/metadata-catalog/nssv/item"},{"rel":"first","href":"http://10.1.1.40:8080/ords/mvk/nssv/koeff"}]}
