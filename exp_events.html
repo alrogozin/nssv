@@ -18,13 +18,16 @@
         <div class="row">
             {{ counter }}<br>
             <button v-on:click="incrementCounter">Increment counter</button>
-            <my-component v-on:increment-me="incrementCounter">Increment from child</my-component>
+            <my-component v-on:increment-me="incrementCounter"><h4 slot="titleSlot">Some text to <b>slot</b></h4><div slot="contentSlot">text 4 content</div></my-component>
         </div>
     </div>
     <!--  -->
     <script type="text/javascript">
         const MyComponent = {
-            template: `<div><button v-on:click="childIncrementalCounter">Increment From child</button></div>`,
+            template: `<div><button v-on:click="childIncrementalCounter">Increment From child</button>
+            <div><slot name="titleSlot"></slot></div>
+            <div><slot name="contentSlot"></slot></div>
+            </div>`,
             methods: {
                 childIncrementalCounter() {
                     this.$emit('increment-me');
